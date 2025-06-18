@@ -1,16 +1,14 @@
-
-//important note: the code on C_free is unefficiency ,please use the code link from word file and open it
-
-
-
-
 #include <iostream>
 #include <cstdlib>
-#include <ctime>
+#include <chrono>
 #include <vector>
 #include <algorithm>
+#include <random>
+#include <numeric>
+#include <ctime>
 
 using namespace std;
+using namespace std::chrono;
 
 // ========== Bubble Sort ==========
 void bubbleSort(vector<int>& arr) {
@@ -54,6 +52,7 @@ void mergeSort(vector<int>& arr, int left, int right) {
     }
 }
 
+// Wrapper for mergeSort
 void mergeSortWrapper(vector<int>& arr) {
     mergeSort(arr, 0, arr.size() - 1);
 }
@@ -83,6 +82,7 @@ void quickSort(vector<int>& arr, int low, int high) {
     }
 }
 
+// Wrapper for quickSort
 void quickSortWrapper(vector<int>& arr) {
     quickSort(arr, 0, arr.size() - 1);
 }
@@ -90,22 +90,17 @@ void quickSortWrapper(vector<int>& arr) {
 // ========== Generate Data ==========
 vector<int> generate_data(int size, const string& type) {
     vector<int> data(size);
-    for (int i = 0; i < size; ++i) {
-        data[i] = i + 1;
-    }
+    iota(data.begin(), data.end(), 1);
+
+    random_device rd;
+    mt19937 g(rd());
 
     if (type == "random") {
-        for (int i = 0; i < size; ++i) {
-            int j = rand() % size;
-            swap(data[i], data[j]);
-        }
+        shuffle(data.begin(), data.end(), g);
     } else if (type == "reverse") {
         reverse(data.begin(), data.end());
     } else if (type == "partial") {
-        for (int i = 0; i < size / 4; ++i) {
-            int j = rand() % size;
-            swap(data[i], data[j]);
-        }
+        shuffle(data.begin(), data.begin() + size / 4, g);
     }
 
     return data;
@@ -113,31 +108,32 @@ vector<int> generate_data(int size, const string& type) {
 
 // ========== Measure Time ==========
 double measure_time(void (*sort_func)(vector<int>&), vector<int> data) {
-    clock_t start = clock();
+    auto start = high_resolution_clock::now();
     sort_func(data);
-    clock_t end = clock();
-    return (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
+    auto end = high_resolution_clock::now();
+    return duration_cast<microseconds>(end - start).count() / 1000.0;
 }
 
 // ========== Main ==========
 int main() {
     srand(time(0));
-    int sizes[] = {100, 500, 1000, 5000, 10000};
-    string types[] = {"random", "reverse", "partial"};
+    vector<int> sizes = {100, 500, 1000, 5000, 10000};
+    vector<string> types = {"random", "reverse", "partial"};
 
-    for (int i = 0; i < 5; ++i) {
-        int size = sizes[i];
+    for (int size : sizes) {
         cout << "\n=== Data Size: " << size << " ===" << endl;
-        for (int j = 0; j < 3; ++j) {
-            string type = types[j];
+        for (const string& type : types) {
             vector<int> data = generate_data(size, type);
 
+            // Bubble Sort
             vector<int> copy = data;
             double time_bubble = measure_time(bubbleSort, copy);
 
+            // Merge Sort
             copy = data;
             double time_merge = measure_time(mergeSortWrapper, copy);
 
+            // Quick Sort
             copy = data;
             double time_quick = measure_time(quickSortWrapper, copy);
 
